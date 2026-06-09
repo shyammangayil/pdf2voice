@@ -1,0 +1,6 @@
+ocr_engine: paddle
+tts_engine: kokoro
+chunk_size: 1000
+fps: 1
+output_format: mp4
+output_dir: "./output"
