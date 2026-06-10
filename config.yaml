@@ -1,5 +1,5 @@
 ocr_engine: paddle
-tts_engine: kokoro
+tts_engine: edge
 chunk_size: 1000
 fps: 1
 output_format: mp4
