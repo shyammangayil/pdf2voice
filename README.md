@@ -1,6 +1,6 @@
 # PDF-to-Audiobook-MP4 System
 
-A modular, extensible Python system that converts PDF documents into synchronized MP4 audiobooks. It automatically detects scanned documents, falls back to OCR, cleans text artifacts, and uses Text-to-Speech (TTS) engines to generate narrated video with static page visuals.
+A modular, extensible Python system that converts PDF documents into synchronized MP4 audiobooks. It automatically detects scanned documents, falls back to OCR, cleans text artifacts, and uses Text-to-Speech (TTS) engines to generate narrated video with static page visuals. Layout intelligence has not been worked on yet. 
 
 ## 🌟 Features
 - **Smart Detection**: Automatically distinguishes between digital and scanned PDFs.
