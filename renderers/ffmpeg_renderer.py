@@ -17,36 +17,101 @@ class FFmpegRenderer:
 
         print(f"Rendering {len(timeline.clips)} clips with audio...")
 
+        # for i, clip in enumerate(timeline.clips):
+            # clip_output = os.path.join(temp_dir, f"temp_clip_{i:04d}.mp4")
+            # clip_paths.append(clip_output)
+            
+            # duration = max(1.0, clip.end_time - clip.start_time)
+            
+            # cmd = [
+                # "ffmpeg", "-y",
+                # "-loop", "1",
+                # "-i", clip.image_path,
+                # "-ss", str(clip.audio_start_offset),  # Start audio at calculated offset
+                # "-i", clip.audio_path,                # Use the REAL generated audio file!
+                # "-c:v", "libx264",
+                # "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+                # "-t", str(duration),
+                # "-r", str(self.fps),
+                # "-pix_fmt", "yuv420p",
+                # "-c:a", "aac",                        # Encode audio to AAC for MP4 compatibility
+                # "-shortest",
+                # clip_output
+            # ]
+            
+            # result = subprocess.run(cmd, capture_output=True, text=True)
+            # if result.returncode != 0:
+                # print(f"\n❌ FFmpeg failed on clip {i} (Page {clip.page_number})")
+                # print(f"FFmpeg Error Output:\n{result.stderr}")
+                # raise RuntimeError("FFmpeg rendering failed.")
+            
+            # if (i + 1) % 50 == 0 or (i + 1) == len(timeline.clips):
+                # print(f"  Progress: {i + 1}/{len(timeline.clips)} clips rendered.")
+                
+
         for i, clip in enumerate(timeline.clips):
             clip_output = os.path.join(temp_dir, f"temp_clip_{i:04d}.mp4")
             clip_paths.append(clip_output)
-            
+
+            # Skip rendering if the existing clip appears to be valid.
+            if os.path.isfile(clip_output) and os.path.getsize(clip_output) > 0:
+                probe_cmd = [
+                    "ffprobe",
+                    "-v", "error",
+                    "-show_entries", "format=duration",
+                    "-of", "default=noprint_wrappers=1:nokey=1",
+                    clip_output
+                ]
+
+                probe_result = subprocess.run(
+                    probe_cmd,
+                    capture_output=True,
+                    text=True
+                )
+
+                if (
+                    probe_result.returncode == 0
+                    and probe_result.stdout.strip()
+                ):
+                    print(f"  Skipping existing clip {i} (Page {clip.page_number})")
+                    continue
+
+                print(f"  Existing clip {i} is invalid. Rerendering...")
+
             duration = max(1.0, clip.end_time - clip.start_time)
-            
+
             cmd = [
                 "ffmpeg", "-y",
                 "-loop", "1",
                 "-i", clip.image_path,
-                "-ss", str(clip.audio_start_offset),  # Start audio at calculated offset
-                "-i", clip.audio_path,                # Use the REAL generated audio file!
+                "-ss", str(clip.audio_start_offset),
+                "-i", clip.audio_path,
                 "-c:v", "libx264",
                 "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
                 "-t", str(duration),
                 "-r", str(self.fps),
                 "-pix_fmt", "yuv420p",
-                "-c:a", "aac",                        # Encode audio to AAC for MP4 compatibility
+                "-c:a", "aac",
                 "-shortest",
                 clip_output
             ]
-            
+
             result = subprocess.run(cmd, capture_output=True, text=True)
+
             if result.returncode != 0:
                 print(f"\n❌ FFmpeg failed on clip {i} (Page {clip.page_number})")
                 print(f"FFmpeg Error Output:\n{result.stderr}")
                 raise RuntimeError("FFmpeg rendering failed.")
-            
+
+            # Verify the newly rendered clip before proceeding.
+            if not os.path.isfile(clip_output) or os.path.getsize(clip_output) == 0:
+                raise RuntimeError(
+                    f"Clip {i} (Page {clip.page_number}) was not generated correctly."
+                )
+
             if (i + 1) % 50 == 0 or (i + 1) == len(timeline.clips):
-                print(f"  Progress: {i + 1}/{len(timeline.clips)} clips rendered.")
+                print(f"  Progress: {i + 1}/{len(timeline.clips)} clips processed.")
+
 
         # Concatenate all clips
         print("Running final FFmpeg concatenation...")
